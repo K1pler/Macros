@@ -75,8 +75,7 @@ class _DailyLogScreenState extends State<DailyLogScreen> {
     final logProvider = context.watch<LogProvider>();
     final profileProvider = context.watch<ProfileProvider>();
     
-    // Obtenemos los datos del perfil y objetivos
-    final profile = profileProvider.profile;
+    // Obtenemos los objetivos del perfil
     final goals = profileProvider.goals;
     
     // Obtenemos el registro del día seleccionado
