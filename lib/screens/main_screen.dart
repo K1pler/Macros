@@ -51,8 +51,8 @@ class _MainScreenState extends State<MainScreen> {
         items: const <BottomNavigationBarItem>[
           // Primer elemento: Registro diario
           BottomNavigationBarItem(
-            icon: ImageIcon(AssetImage('assets/logo.png')),
-            activeIcon: ImageIcon(AssetImage('assets/logo.png')),
+            icon: Icon(Icons.calendar_today_outlined),
+            activeIcon: Icon(Icons.calendar_today),
             label: 'Registro',
           ),
           // Segundo elemento: Alimentos

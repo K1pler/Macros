@@ -115,36 +115,88 @@ class ProfileProvider with ChangeNotifier {
 
   // Guarda el perfil y objetivos en el almacenamiento local del dispositivo
   Future<void> _saveProfile() async {
-    final prefs = await SharedPreferences.getInstance();
-    
-    // Guardamos el perfil como JSON
-    await prefs.setString('userProfile', json.encode(_profile.toJson()));
-    // Guardamos los objetivos como JSON
-    await prefs.setString('userGoals', json.encode(_goals.toJson()));
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      
+      // Guardamos el perfil como JSON
+      await prefs.setString('userProfile', json.encode(_profile.toJson()));
+      // Guardamos los objetivos como JSON
+      await prefs.setString('userGoals', json.encode(_goals.toJson()));
+      
+      print('Datos guardados exitosamente');
+    } catch (e) {
+      // Si hay un error al guardar, lo registramos pero no interrumpimos la app
+      print('Error guardando datos: $e');
+    }
   }
 
   // Carga el perfil y objetivos desde el almacenamiento local
   Future<void> _loadProfileAndGoals() async {
-    final prefs = await SharedPreferences.getInstance();
-    
-    // Cargamos el perfil guardado
-    final profileJson = prefs.getString('userProfile');
-    if (profileJson != null) {
-      _profile = UserProfile.fromJson(json.decode(profileJson));
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      
+      // Cargamos el perfil guardado
+      final profileJson = prefs.getString('userProfile');
+      if (profileJson != null) {
+        try {
+          _profile = UserProfile.fromJson(json.decode(profileJson));
+        } catch (e) {
+          // Si hay error al cargar el perfil, usamos el perfil por defecto
+          print('Error cargando perfil: $e');
+        }
+      }
+      
+      // Cargamos los objetivos guardados
+      final goalsJson = prefs.getString('userGoals');
+      if (goalsJson != null) {
+        try {
+          _goals = UserGoals.fromJson(json.decode(goalsJson));
+        } catch (e) {
+          // Si hay error al cargar los objetivos, los calculamos desde el perfil
+          print('Error cargando objetivos: $e');
+        }
+      }
+      
+      // Calculamos BMR y TDEE con los datos cargados
+      _calculateBmrAndTdee();
+      
+      // Notificamos a los widgets que los datos han sido cargados
+      notifyListeners();
+    } catch (e) {
+      // Si hay un error general, usamos los valores por defecto
+      print('Error general cargando datos: $e');
+      _calculateBmrAndTdee();
+      notifyListeners();
     }
-    
-    // Cargamos los objetivos guardados
-    final goalsJson = prefs.getString('userGoals');
-    if (goalsJson != null) {
-      _goals = UserGoals.fromJson(json.decode(goalsJson));
-    }
-    
-    // Calculamos BMR y TDEE con los datos cargados
-    _calculateBmrAndTdee();
   }
 
   // Guarda los objetivos actuales (función pública para el botón "Guardar")
   Future<void> saveGoals() async {
     await _saveProfile();
+  }
+
+  // Método para limpiar todos los datos guardados (útil para debugging)
+  Future<void> clearSavedData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('userProfile');
+      await prefs.remove('userGoals');
+      print('Datos guardados eliminados');
+    } catch (e) {
+      print('Error eliminando datos: $e');
+    }
+  }
+
+  // Método para verificar si hay datos guardados
+  Future<bool> hasSavedData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final hasProfile = prefs.containsKey('userProfile');
+      final hasGoals = prefs.containsKey('userGoals');
+      return hasProfile || hasGoals;
+    } catch (e) {
+      print('Error verificando datos guardados: $e');
+      return false;
+    }
   }
 }
