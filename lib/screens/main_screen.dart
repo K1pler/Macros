@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'profile_screen.dart';
 import 'daily_log_screen.dart';
 import 'food_registry_screen.dart';
+import 'package:provider/provider.dart';
+import '../providers/profile_provider.dart';
 
 // Pantalla principal que contiene la navegación entre las diferentes secciones
 class MainScreen extends StatefulWidget {
@@ -40,6 +42,28 @@ class _MainScreenState extends State<MainScreen> {
       // Barra superior con el título de la pantalla actual
       appBar: AppBar(
         title: Text(_titles[_selectedIndex]),
+        actions: [
+          FutureBuilder<bool>(
+            future: Provider.of<ProfileProvider>(context, listen: false).hasSavedData(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.0),
+                  child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)),
+                );
+              }
+              final isActive = snapshot.data ?? false;
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Icon(
+                  Icons.verified_user,
+                  color: isActive ? Colors.green : Colors.grey,
+                  semanticLabel: isActive ? 'Usuario activo' : 'Sin usuario activo',
+                ),
+              );
+            },
+          ),
+        ],
       ),
       // Cuerpo de la aplicación que muestra la pantalla seleccionada
       body: IndexedStack(

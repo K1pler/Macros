@@ -2,6 +2,12 @@
 import 'package:flutter/material.dart';
 // Librería para animaciones de carga
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+// Provider para acceder a los providers
+import 'package:provider/provider.dart';
+// Importamos los providers
+import '../providers/food_provider.dart';
+import '../providers/log_provider.dart';
+import '../providers/profile_provider.dart';
 // Importamos la pantalla principal
 import 'main_screen.dart';
 
@@ -24,8 +30,9 @@ class _SplashScreenState extends State<SplashScreen> {
 
   // Función que maneja la navegación automática a la pantalla principal
   void _navigateToMain() async {
-    // Esperamos 3 segundos antes de navegar
-    await Future.delayed(const Duration(seconds: 3));
+    // Esperamos a que todos los providers se inicialicen
+    await _waitForProvidersInitialization();
+    
     // Verificamos que el widget aún esté montado (no se haya destruido)
     if (mounted) {
       // Navegamos a la pantalla principal y reemplazamos esta pantalla
@@ -34,6 +41,28 @@ class _SplashScreenState extends State<SplashScreen> {
         context,
         MaterialPageRoute(builder: (context) => const MainScreen()),
       );
+    }
+  }
+
+  // Función para esperar a que todos los providers se inicialicen
+  Future<void> _waitForProvidersInitialization() async {
+    // Esperamos un mínimo de 2 segundos para mostrar la pantalla de carga
+    await Future.delayed(const Duration(seconds: 2));
+    
+    // Esperamos a que todos los providers estén inicializados
+    while (mounted) {
+      final foodProvider = context.read<FoodProvider>();
+      final logProvider = context.read<LogProvider>();
+      final profileProvider = context.read<ProfileProvider>();
+      
+      // Verificamos si todos los providers están inicializados
+      if (foodProvider.isInitialized && logProvider.isInitialized && profileProvider.isInitialized) {
+        print('Todos los providers inicializados correctamente');
+        break;
+      }
+      
+      // Esperamos un poco más antes de verificar nuevamente
+      await Future.delayed(const Duration(milliseconds: 100));
     }
   }
 
@@ -70,6 +99,30 @@ class _SplashScreenState extends State<SplashScreen> {
             const SpinKitFadingCircle(
               color: Colors.red,
               size: 50.0,
+            ),
+            // Espacio adicional
+            const SizedBox(height: 24),
+            // Texto de estado de carga
+            Consumer3<FoodProvider, LogProvider, ProfileProvider>(
+              builder: (context, foodProvider, logProvider, profileProvider, child) {
+                if (foodProvider.isInitialized && logProvider.isInitialized && profileProvider.isInitialized) {
+                  return const Text(
+                    '¡Listo!',
+                    style: TextStyle(
+                      color: Colors.green,
+                      fontSize: 16,
+                    ),
+                  );
+                } else {
+                  return const Text(
+                    'Cargando datos...',
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: 16,
+                    ),
+                  );
+                }
+              },
             ),
           ],
         ),

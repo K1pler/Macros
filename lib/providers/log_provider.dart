@@ -2,12 +2,65 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/log_entry.dart';
 import '../models/food_item.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 // Provider que gestiona el registro diario de alimentos consumidos
 class LogProvider with ChangeNotifier {
   // Mapa que almacena los registros por fecha
   // La clave es la fecha en formato 'yyyy-MM-dd' y el valor es la lista de entradas
   final Map<String, List<LogEntry>> _dailyLogs = {};
+  
+  // Flag para indicar si los datos han sido cargados
+  bool _isInitialized = false;
+
+  // Getter para verificar si los datos están inicializados
+  bool get isInitialized => _isInitialized;
+
+  // Método para inicializar el provider (llamado desde el constructor)
+  Future<void> initialize() async {
+    await _loadLogs();
+  }
+
+  LogProvider() {
+    initialize();
+  }
+
+  // Guarda los registros diarios en SharedPreferences
+  Future<void> _saveLogs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final logsJson = json.encode(_dailyLogs.map((date, entries) => MapEntry(date, entries.map((e) => e.toJson()).toList())));
+      await prefs.setString('dailyLogs', logsJson);
+      print('Logs guardados exitosamente: ${_dailyLogs.length} días');
+    } catch (e) {
+      print('Error guardando logs: $e');
+    }
+  }
+
+  // Carga los registros diarios desde SharedPreferences
+  Future<void> _loadLogs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final logsJson = prefs.getString('dailyLogs');
+      if (logsJson != null) {
+        final Map<String, dynamic> data = json.decode(logsJson);
+        _dailyLogs.clear();
+        data.forEach((date, entries) {
+          _dailyLogs[date] = (entries as List).map((e) => LogEntry.fromJson(e)).toList();
+        });
+        print('Logs cargados exitosamente: ${_dailyLogs.length} días');
+      } else {
+        print('No se encontraron logs guardados');
+      }
+      _isInitialized = true;
+      notifyListeners();
+    } catch (e) {
+      print('Error cargando logs: $e');
+      _isInitialized = true;
+      notifyListeners();
+    }
+  }
 
   // Obtiene todas las entradas del registro para una fecha específica
   List<LogEntry> getLogForDate(DateTime date) {
@@ -19,34 +72,27 @@ class LogProvider with ChangeNotifier {
 
   // Añade un alimento al registro diario
   void addFoodToLog(DateTime date, String foodId, double quantity) {
-    // Convertimos la fecha a string en formato 'yyyy-MM-dd'
     final dateKey = DateFormat('yyyy-MM-dd').format(date);
-    
-    // Si no existe una lista para esa fecha, la creamos
     if (_dailyLogs[dateKey] == null) {
       _dailyLogs[dateKey] = [];
     }
-    
-    // Creamos una nueva entrada en el registro
     _dailyLogs[dateKey]!.add(LogEntry(
-        id: DateTime.now().millisecondsSinceEpoch.toString(), // ID único basado en timestamp
-        foodId: foodId, // ID del alimento consumido
-        quantity: quantity)); // Cantidad consumida en gramos
-    
-    // Notificamos a todos los widgets que escuchan este provider
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        foodId: foodId,
+        quantity: quantity));
+    print('Alimento añadido al log: $foodId, cantidad: $quantity, fecha: $dateKey');
     notifyListeners();
+    _saveLogs();
   }
   
   // Elimina una entrada específica del registro
   void deleteLogEntry(DateTime date, String entryId) {
-    // Convertimos la fecha a string en formato 'yyyy-MM-dd'
     final dateKey = DateFormat('yyyy-MM-dd').format(date);
-    
-    // Si existe una lista para esa fecha, eliminamos la entrada
     if (_dailyLogs[dateKey] != null) {
       _dailyLogs[dateKey]!.removeWhere((entry) => entry.id == entryId);
-      // Notificamos a todos los widgets que escuchan este provider
+      print('Entrada eliminada del log: $entryId, fecha: $dateKey');
       notifyListeners();
+      _saveLogs();
     }
   }
   
@@ -75,8 +121,22 @@ class LogProvider with ChangeNotifier {
       } catch (e) {
         // Si no encontramos el alimento (puede haber sido eliminado), lo ignoramos
         // Ignora si un alimento del log ya no existe en la BD principal
+        print('Alimento no encontrado en getTotalsForDate: ${entry.foodId}');
       }
     }
     return totals;
+  }
+
+  // Método para limpiar todos los datos guardados (útil para debugging)
+  Future<void> clearSavedData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('dailyLogs');
+      _dailyLogs.clear();
+      print('Datos de logs eliminados');
+      notifyListeners();
+    } catch (e) {
+      print('Error eliminando datos de logs: $e');
+    }
   }
 }

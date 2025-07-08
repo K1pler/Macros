@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/profile_provider.dart';
+import '../providers/food_provider.dart';
+import '../providers/log_provider.dart';
 
 // Pantalla que permite configurar el perfil del usuario y ver los cálculos nutricionales
 class ProfileScreen extends StatefulWidget {
@@ -105,6 +107,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           },
           child: const Text('Guardar Objetivos'),
         ),
+        const SizedBox(height: 16),
+        // Widget que muestra la configuración avanzada
+        _buildAdvancedSettings(context),
       ],
     );
   }
@@ -357,5 +362,112 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ],
       ),
     );
+  }
+
+  // Widget que muestra la configuración avanzada
+  Widget _buildAdvancedSettings(BuildContext context) {
+    final profileProvider = context.read<ProfileProvider>();
+    final foodProvider = context.read<FoodProvider>();
+    final logProvider = context.read<LogProvider>();
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text("Configuración Avanzada", style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 16),
+            
+            // Botón para limpiar todos los datos
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => _showClearDataDialog(context, profileProvider, foodProvider, logProvider),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red[700],
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Limpiar Todos los Datos'),
+              ),
+            ),
+            const SizedBox(height: 8),
+            
+            // Botón para recargar alimentos de ejemplo
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => _reloadSampleFoods(context, foodProvider),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange[700],
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Recargar Alimentos de Ejemplo'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Diálogo para confirmar la limpieza de datos
+  void _showClearDataDialog(BuildContext context, ProfileProvider profileProvider, FoodProvider foodProvider, LogProvider logProvider) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirmar Limpieza'),
+          content: const Text('¿Estás seguro de que quieres eliminar todos los datos guardados? Esta acción no se puede deshacer.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _clearAllData(profileProvider, foodProvider, logProvider);
+              },
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Eliminar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Función para limpiar todos los datos
+  void _clearAllData(ProfileProvider profileProvider, FoodProvider foodProvider, LogProvider logProvider) async {
+    await profileProvider.clearSavedData();
+    await foodProvider.clearSavedData();
+    await logProvider.clearSavedData();
+    
+    // Recargamos los alimentos de ejemplo
+    await foodProvider.reloadSampleFoods();
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Todos los datos han sido eliminados y se han recargado los alimentos de ejemplo.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
+  }
+
+  // Función para recargar alimentos de ejemplo
+  void _reloadSampleFoods(BuildContext context, FoodProvider foodProvider) async {
+    await foodProvider.reloadSampleFoods();
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Alimentos de ejemplo recargados correctamente.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
   }
 }

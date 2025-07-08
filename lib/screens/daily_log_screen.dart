@@ -6,6 +6,7 @@ import '../providers/log_provider.dart';
 import '../providers/profile_provider.dart';
 import '../widgets/macro_progress_indicator.dart';
 import '../models/log_entry.dart';
+import '../models/food_item.dart';
 import '../models/user_profile.dart';
 
 // Pantalla que permite registrar los alimentos consumidos en un día específico
@@ -129,12 +130,7 @@ class _DailyLogScreenState extends State<DailyLogScreen> {
             DropdownButtonFormField<String>(
               decoration: const InputDecoration(labelText: 'Alimento'),
               value: _selectedFoodId,
-              items: foodProvider.foods.map((food) {
-                return DropdownMenuItem<String>(
-                  value: food.id,
-                  child: Text(food.nombre),
-                );
-              }).toList(),
+              items: _buildFoodDropdownItems(foodProvider.foods),
               onChanged: (value) {
                 setState(() {
                   _selectedFoodId = value;
@@ -267,5 +263,79 @@ class _DailyLogScreenState extends State<DailyLogScreen> {
         ),
       ),
     );
+  }
+
+  List<DropdownMenuItem<String>> _buildFoodDropdownItems(List<FoodItem> foods) {
+    // Agrupamos los alimentos por categoría
+    Map<String, List<FoodItem>> foodsByCategory = {};
+    
+    for (var food in foods) {
+      if (!foodsByCategory.containsKey(food.categoria)) {
+        foodsByCategory[food.categoria] = [];
+      }
+      foodsByCategory[food.categoria]!.add(food);
+    }
+    
+    List<DropdownMenuItem<String>> items = [];
+    
+    // Ordenamos las categorías para una mejor presentación
+    List<String> categoryOrder = ['Desayuno', 'Almuerzo', 'Cena', 'Snacks', 'General'];
+    
+    for (String category in categoryOrder) {
+      if (foodsByCategory.containsKey(category)) {
+        // Añadimos un separador para la categoría
+        items.add(DropdownMenuItem<String>(
+          value: null,
+          enabled: false,
+          child: Text(
+            '─── $category ───',
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.grey,
+            ),
+          ),
+        ));
+        
+        // Añadimos los alimentos de esta categoría
+        for (var food in foodsByCategory[category]!) {
+          items.add(DropdownMenuItem<String>(
+            value: food.id,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 16.0),
+              child: Text(food.nombre),
+            ),
+          ));
+        }
+      }
+    }
+    
+    // Añadimos cualquier categoría que no esté en el orden predefinido
+    for (String category in foodsByCategory.keys) {
+      if (!categoryOrder.contains(category)) {
+        items.add(DropdownMenuItem<String>(
+          value: null,
+          enabled: false,
+          child: Text(
+            '─── $category ───',
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.grey,
+            ),
+          ),
+        ));
+        
+        for (var food in foodsByCategory[category]!) {
+          items.add(DropdownMenuItem<String>(
+            value: food.id,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 16.0),
+              child: Text(food.nombre),
+            ),
+          ));
+        }
+      }
+    }
+    
+    return items;
   }
 }

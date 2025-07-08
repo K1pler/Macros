@@ -6,6 +6,8 @@ class FoodItem {
   final String nombre;
   // Tipo o categoría del alimento (ej: "Proteínas", "Carbohidratos", etc.)
   final String tipo;
+  // Categoría del alimento para organización (ej: "Desayuno", "Almuerzo", "Cena", "Snacks")
+  final String categoria;
   // Cantidad de referencia en gramos (ej: 100g)
   final double cantidadReferencia;
   // Calorías por cantidad de referencia
@@ -22,6 +24,7 @@ class FoodItem {
     required this.id,
     required this.nombre,
     required this.tipo,
+    required this.categoria,
     required this.cantidadReferencia,
     required this.kcal,
     required this.proteinas,
@@ -39,6 +42,8 @@ class FoodItem {
       nombre: json['nombre'] ?? 'Sin nombre',
       // Tipo del alimento, con valor por defecto si no existe
       tipo: json['tipo'] ?? 'General',
+      // Categoría del alimento, con valor por defecto si no existe
+      categoria: json['categoria'] ?? 'General',
       // Cantidad de referencia, por defecto 100g
       cantidadReferencia: (json['cantidad_referencia'] as num? ?? 100.0).toDouble(),
       // Calorías, por defecto 0
@@ -50,5 +55,20 @@ class FoodItem {
       // Grasas, por defecto 0
       grasas: (json['grasas'] as num? ?? 0.0).toDouble(),
     );
+  }
+
+  // Método para convertir un FoodItem a JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'nombre': nombre,
+      'tipo': tipo,
+      'categoria': categoria,
+      'cantidad_referencia': cantidadReferencia,
+      'kcal': kcal,
+      'proteinas': proteinas,
+      'carbohidratos': carbohidratos,
+      'grasas': grasas,
+    };
   }
 }

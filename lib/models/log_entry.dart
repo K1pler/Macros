@@ -13,4 +13,22 @@ class LogEntry {
     required this.foodId,
     required this.quantity,
   });
+
+  // Método para convertir LogEntry a JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'foodId': foodId,
+      'quantity': quantity,
+    };
+  }
+
+  // Método para crear LogEntry desde JSON
+  factory LogEntry.fromJson(Map<String, dynamic> json) {
+    return LogEntry(
+      id: json['id'],
+      foodId: json['foodId'],
+      quantity: (json['quantity'] as num).toDouble(),
+    );
+  }
 }

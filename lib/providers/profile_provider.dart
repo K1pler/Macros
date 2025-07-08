@@ -14,6 +14,9 @@ class ProfileProvider with ChangeNotifier {
   double _bmr = 0;
   // Gasto energético total (calorías que quema el cuerpo con actividad)
   double _tdee = 0;
+  
+  // Flag para indicar si los datos han sido cargados
+  bool _isInitialized = false;
 
   // Constructor: al crear el provider, cargamos los datos guardados
   ProfileProvider() {
@@ -27,6 +30,9 @@ class ProfileProvider with ChangeNotifier {
   double get tdee => _tdee;
   // Calorías finales objetivo (TDEE - déficit)
   double get finalCalories => _tdee - _profile.deficit;
+  
+  // Getter para verificar si los datos están inicializados
+  bool get isInitialized => _isInitialized;
 
   // Calcula los gramos de cada macronutriente basado en las calorías objetivo
   Map<String, double> get macroGrams {
@@ -157,15 +163,17 @@ class ProfileProvider with ChangeNotifier {
         }
       }
       
-      // Calculamos BMR y TDEE con los datos cargados
+            // Calculamos BMR y TDEE con los datos cargados
       _calculateBmrAndTdee();
       
+      _isInitialized = true;
       // Notificamos a los widgets que los datos han sido cargados
       notifyListeners();
     } catch (e) {
       // Si hay un error general, usamos los valores por defecto
       print('Error general cargando datos: $e');
       _calculateBmrAndTdee();
+      _isInitialized = true;
       notifyListeners();
     }
   }
